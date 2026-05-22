@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://cuartoclaro-rd.vercel.app/sitemap.xml

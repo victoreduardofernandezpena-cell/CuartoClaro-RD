@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="CuartoClaro RD es una app simple y moderna para controlar gastos personales, presupuestos, metas de ahorro y conversion dolar-peso."
+    />
+    <meta property="og:title" content="CuartoClaro RD" />
+    <meta property="og:description" content="Gastos personales RD, simple, moderna y lista para usar." />
+    <meta property="og:image" content="og-image.svg" />
+    <meta name="theme-color" content="#0f8b6f" />
+    <title>CuartoClaro RD</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Navegacion principal">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">CC</div>
+          <div>
+            <strong>CuartoClaro</strong>
+            <span>Gastos personales RD</span>
+          </div>
+        </div>
+
+        <nav class="nav-list">
+          <a href="#dashboard" class="active"><span aria-hidden="true">D</span>Dashboard</a>
+          <a href="#categorias"><span aria-hidden="true">C</span>Categorias</a>
+          <a href="#presupuesto"><span aria-hidden="true">P</span>Presupuesto</a>
+          <a href="#metas"><span aria-hidden="true">M</span>Metas</a>
+          <a href="#historial"><span aria-hidden="true">H</span>Historial</a>
+          <a href="#premium"><span aria-hidden="true">+</span>Premium</a>
+        </nav>
+
+        <div class="sidebar-card">
+          <span>Balance del mes</span>
+          <strong id="sidebarBalance">RD$0.00</strong>
+          <small id="sidebarHint">Actualizado ahora</small>
+        </div>
+
+        <button class="theme-toggle" id="themeToggle" type="button" aria-label="Cambiar modo oscuro">
+          <span class="theme-icon" aria-hidden="true">OC</span>
+          <span id="themeText">Modo oscuro</span>
+        </button>
+      </aside>
+
+      <main class="main-content">
+        <header class="topbar" id="dashboard">
+          <div>
+            <p class="eyebrow">Mayo 2026</p>
+            <h1>Resumen mensual</h1>
+          </div>
+          <div class="header-actions">
+            <button class="ghost-button" id="exportButton" type="button">Exportar CSV</button>
+            <button class="ghost-button whatsapp" id="whatsappButton" type="button">WhatsApp</button>
+            <div class="rate-card" aria-label="Conversor dolar">
+              <label for="usdAmount">USD</label>
+              <input id="usdAmount" type="number" min="0" step="1" value="100" />
+              <span id="dopResult">RD$5,900.00</span>
+            </div>
+          </div>
+        </header>
+
+        <section class="summary-strip" aria-label="Resumen semanal y mensual">
+          <article>
+            <span>Esta semana</span>
+            <strong id="weeklyMetric">RD$0.00</strong>
+          </article>
+          <article>
+            <span>Promedio diario</span>
+            <strong id="dailyMetric">RD$0.00</strong>
+          </article>
+          <article>
+            <span>Mayor categoria</span>
+            <strong id="topCategoryMetric">Comida</strong>
+          </article>
+        </section>
+
+        <section class="metrics-grid" aria-label="Indicadores principales">
+          <article class="metric">
+            <div class="metric-icon" aria-hidden="true">$</div>
+            <span>Gastado</span>
+            <strong id="spentMetric">RD$0.00</strong>
+            <small id="spentDelta">0% del presupuesto</small>
+          </article>
+          <article class="metric">
+            <div class="metric-icon blue" aria-hidden="true">=</div>
+            <span>Disponible</span>
+            <strong id="availableMetric">RD$0.00</strong>
+            <small>Para el resto del mes</small>
+          </article>
+          <article class="metric">
+            <div class="metric-icon coral" aria-hidden="true">%</div>
+            <span>Ahorro</span>
+            <strong id="savingsMetric">RD$0.00</strong>
+            <small id="savingsDelta">0 metas activas</small>
+          </article>
+          <article class="metric alert-metric" id="alertMetric">
+            <div class="metric-icon warn" aria-hidden="true">!</div>
+            <span>Alerta</span>
+            <strong id="alertTitle">Todo bien</strong>
+            <small id="alertCopy">Tus gastos estan dentro del plan.</small>
+          </article>
+        </section>
+
+        <section class="workspace-grid">
+          <div class="left-column">
+            <section class="panel chart-panel" aria-labelledby="chartTitle">
+              <div class="panel-heading">
+                <div>
+                  <p class="eyebrow">Graficos financieros</p>
+                  <h2 id="chartTitle">Gastos por categoria</h2>
+                </div>
+                <div class="segmented" role="tablist" aria-label="Vista de grafico">
+                  <button type="button" class="active" data-chart="category">Categorias</button>
+                  <button type="button" data-chart="trend">Tendencia</button>
+                </div>
+              </div>
+              <canvas id="expenseChart" width="900" height="360" aria-label="Grafico de gastos"></canvas>
+            </section>
+
+            <section class="panel" id="historial" aria-labelledby="historyTitle">
+              <div class="panel-heading">
+                <div>
+                  <p class="eyebrow">Historial de gastos</p>
+                  <h2 id="historyTitle">Movimientos recientes</h2>
+                </div>
+              </div>
+              <div class="filters-row">
+                <select id="categoryFilter" aria-label="Filtrar por categoria">
+                  <option value="Todas">Todas</option>
+                </select>
+                <select id="periodFilter" aria-label="Filtrar por periodo">
+                  <option value="all">Todo el mes</option>
+                  <option value="week">Esta semana</option>
+                  <option value="today">Hoy</option>
+                </select>
+                <input id="searchFilter" type="search" placeholder="Buscar gasto" aria-label="Buscar gasto" />
+                <input id="minAmountFilter" type="number" min="0" placeholder="Min RD$" aria-label="Monto minimo" />
+              </div>
+              <div class="expense-list" id="expenseList"></div>
+            </section>
+          </div>
+
+          <div class="right-column">
+            <section class="panel quick-add" aria-labelledby="quickAddTitle">
+              <div class="panel-heading">
+                <div>
+                  <p class="eyebrow">Registro rapido</p>
+                  <h2 id="quickAddTitle">Nuevo gasto</h2>
+                </div>
+              </div>
+              <form id="expenseForm">
+                <label>
+                  Descripcion
+                  <input name="description" type="text" placeholder="Supermercado, gasolina..." required />
+                </label>
+                <div class="form-row">
+                  <label>
+                    Monto RD$
+                    <input name="amount" type="number" min="1" step="1" placeholder="1500" required />
+                  </label>
+                  <label>
+                    Categoria
+                    <select name="category" id="expenseCategory"></select>
+                  </label>
+                </div>
+                <p class="form-message" id="formMessage" role="status"></p>
+                <button class="primary-button" type="submit">Agregar gasto</button>
+              </form>
+            </section>
+
+            <section class="panel" id="presupuesto" aria-labelledby="budgetTitle">
+              <div class="panel-heading">
+                <div>
+                  <p class="eyebrow">Presupuesto mensual</p>
+                  <h2 id="budgetTitle">RD$85,000</h2>
+                </div>
+                <button class="icon-button" id="increaseBudget" type="button" aria-label="Subir presupuesto">+</button>
+              </div>
+              <div id="budgetBars" class="budget-bars"></div>
+            </section>
+
+            <section class="panel" id="metas" aria-labelledby="goalsTitle">
+              <div class="panel-heading">
+                <div>
+                  <p class="eyebrow">Metas de ahorro</p>
+                  <h2 id="goalsTitle">Progreso</h2>
+                </div>
+              </div>
+              <div id="goalList" class="goal-list"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="panel categories-panel" id="categorias" aria-labelledby="categoriesTitle">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Categorias de gastos</p>
+              <h2 id="categoriesTitle">Control por area</h2>
+            </div>
+          </div>
+          <form class="category-form" id="categoryForm">
+            <input name="name" type="text" placeholder="Nueva categoria" required />
+            <input name="budget" type="number" min="100" step="100" placeholder="Presupuesto RD$" required />
+            <button class="ghost-button" type="submit">Agregar categoria</button>
+          </form>
+          <div class="category-grid" id="categoryGrid"></div>
+        </section>
+
+        <section class="premium-panel" id="premium" aria-labelledby="premiumTitle">
+          <div>
+            <p class="eyebrow">Extras premium</p>
+            <h2 id="premiumTitle">Herramientas para cuando quieras ir mas lejos</h2>
+          </div>
+          <div class="premium-grid">
+            <article>
+              <span>SCAN</span>
+              <strong>Escanear facturas</strong>
+              <p>Captura una factura y convierte los datos en gasto sugerido.</p>
+            </article>
+            <article>
+              <span>WID</span>
+              <strong>Widgets</strong>
+              <p>Resumen de presupuesto y metas desde la pantalla principal.</p>
+            </article>
+            <article>
+              <span>PRO</span>
+              <strong>Estadisticas avanzadas</strong>
+              <p>Comparativos, proyecciones y patrones por quincena.</p>
+            </article>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
