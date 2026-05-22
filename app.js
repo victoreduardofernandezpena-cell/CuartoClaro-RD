@@ -1,3 +1,5 @@
+import { firebaseConfig } from "./firebase-config.js";
+
 const pesos = new Intl.NumberFormat("es-DO", {
   style: "currency",
   currency: "DOP",
@@ -5,6 +7,17 @@ const pesos = new Intl.NumberFormat("es-DO", {
 });
 
 const storageKey = "cuartoclaro-state-v2";
+const firebaseReady = isFirebaseConfigured(firebaseConfig);
+let firebaseService = null;
+let firebaseLoadError = null;
+if (firebaseReady) {
+  try {
+    const { createFirebaseService } = await import("./firebase-service.js");
+    firebaseService = createFirebaseService(firebaseConfig);
+  } catch (error) {
+    firebaseLoadError = error;
+  }
+}
 const palette = ["#0f8b6f", "#2457a6", "#d95f43", "#7a5cba", "#b95034", "#c28d2c", "#128c7e", "#8a6f2a"];
 
 const initialState = {
@@ -18,7 +31,9 @@ const initialState = {
 };
 
 const savedState = readSavedState();
-const state = savedState ? mergeState(savedState) : initialState;
+let state = savedState ? mergeState(savedState) : structuredClone(initialState);
+let currentUser = null;
+let cloudSaveTimer = null;
 
 const elements = {
   themeToggle: document.querySelector("#themeToggle"),
@@ -53,6 +68,13 @@ const elements = {
   increaseBudget: document.querySelector("#increaseBudget"),
   exportButton: document.querySelector("#exportButton"),
   whatsappButton: document.querySelector("#whatsappButton"),
+  authScreen: document.querySelector("#authScreen"),
+  authMessage: document.querySelector("#authMessage"),
+  googleLoginButton: document.querySelector("#googleLoginButton"),
+  emailAuthForm: document.querySelector("#emailAuthForm"),
+  localModeButton: document.querySelector("#localModeButton"),
+  userName: document.querySelector("#userName"),
+  logoutButton: document.querySelector("#logoutButton"),
   chartButtons: document.querySelectorAll("[data-chart]")
 };
 
@@ -62,6 +84,15 @@ function mergeState(saved) {
   merged.goals = saved.goals || initialState.goals;
   merged.expenses = saved.expenses || initialState.expenses;
   return merged;
+}
+
+function isFirebaseConfigured(config) {
+  return Boolean(
+    config?.apiKey &&
+      config?.projectId &&
+      !config.apiKey.includes("PEGA_AQUI") &&
+      !config.projectId.includes("PEGA_AQUI")
+  );
 }
 
 function readSavedState() {
@@ -74,7 +105,50 @@ function readSavedState() {
 }
 
 function persist() {
-  localStorage.setItem(storageKey, JSON.stringify(state));
+  const cleanState = serializeState();
+  localStorage.setItem(storageKey, JSON.stringify(cleanState));
+
+  if (!currentUser || !firebaseService) return;
+  window.clearTimeout(cloudSaveTimer);
+  cloudSaveTimer = window.setTimeout(() => {
+    firebaseService.saveUserState(currentUser.uid, cleanState).catch((error) => {
+      showMessage(`No se pudo sincronizar: ${error.message}`, true);
+    });
+  }, 500);
+}
+
+function serializeState() {
+  return {
+    monthlyBudget: state.monthlyBudget,
+    usdRate: state.usdRate,
+    categories: state.categories,
+    goals: state.goals,
+    expenses: state.expenses,
+    chartMode: state.chartMode,
+    dark: state.dark
+  };
+}
+
+function replaceState(nextState) {
+  state = mergeState(nextState || initialState);
+  renderSelectors();
+  document.querySelector("#budgetTitle").textContent = pesos.format(state.monthlyBudget);
+  elements.chartButtons.forEach((item) => item.classList.toggle("active", item.dataset.chart === state.chartMode));
+  renderAll();
+}
+
+async function loadCloudState(user) {
+  if (!firebaseService) return;
+  try {
+    const cloudState = await firebaseService.loadUserState(user.uid);
+    if (cloudState) {
+      replaceState(cloudState);
+    } else {
+      await firebaseService.saveUserState(user.uid, serializeState());
+    }
+  } catch (error) {
+    showMessage(`No se pudieron cargar tus datos: ${error.message}`, true);
+  }
 }
 
 function totalSpent(expenses = state.expenses) {
@@ -415,6 +489,19 @@ function showMessage(text, isError = false) {
   window.setTimeout(() => elements.formMessage.classList.remove("show"), 2600);
 }
 
+function showAuthMessage(text, isError = false) {
+  elements.authMessage.textContent = text;
+  elements.authMessage.classList.toggle("error", isError);
+  elements.authMessage.classList.add("show");
+}
+
+function setSession(user) {
+  currentUser = user;
+  elements.authScreen.classList.toggle("hidden", Boolean(user) || !firebaseReady);
+  elements.userName.textContent = user ? user.displayName || user.email || "Cuenta activa" : "Modo local";
+  elements.logoutButton.hidden = !user;
+}
+
 function exportCsv() {
   const rows = [["Fecha", "Descripcion", "Categoria", "Monto RD$"], ...state.expenses.map((expense) => [
     expense.date,
@@ -513,6 +600,58 @@ elements.searchFilter.addEventListener("input", renderExpenses);
 elements.minAmountFilter.addEventListener("input", renderExpenses);
 elements.exportButton.addEventListener("click", exportCsv);
 elements.whatsappButton.addEventListener("click", shareWhatsApp);
+elements.localModeButton.addEventListener("click", () => {
+  elements.authScreen.classList.add("hidden");
+  showAuthMessage("Modo local activo. Tus datos se guardan solo en este navegador.");
+});
+
+elements.googleLoginButton.addEventListener("click", async () => {
+  if (!firebaseService) {
+    showAuthMessage("Primero pega tus credenciales reales en firebase-config.js.", true);
+    return;
+  }
+
+  try {
+    showAuthMessage("Abriendo Google...");
+    await firebaseService.signInGoogle();
+  } catch (error) {
+    showAuthMessage(error.message, true);
+  }
+});
+
+elements.emailAuthForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!firebaseService) {
+    showAuthMessage("Primero pega tus credenciales reales en firebase-config.js.", true);
+    return;
+  }
+
+  const submitter = event.submitter;
+  const action = submitter?.dataset.authAction || "login";
+  const data = new FormData(event.currentTarget);
+  const email = data.get("email");
+  const password = data.get("password");
+
+  try {
+    showAuthMessage(action === "register" ? "Creando cuenta..." : "Iniciando sesion...");
+    if (action === "register") {
+      await firebaseService.registerEmail(email, password);
+    } else {
+      await firebaseService.signInEmail(email, password);
+    }
+  } catch (error) {
+    showAuthMessage(error.message, true);
+  }
+});
+
+elements.logoutButton.addEventListener("click", async () => {
+  if (!firebaseService || !currentUser) {
+    setSession(null);
+    return;
+  }
+
+  await firebaseService.signOut();
+});
 
 elements.themeToggle.addEventListener("click", () => {
   state.dark = !state.dark;
@@ -539,3 +678,20 @@ window.addEventListener("resize", drawChart);
 renderSelectors();
 document.querySelector("#budgetTitle").textContent = pesos.format(state.monthlyBudget);
 renderAll();
+
+if (firebaseService) {
+  firebaseService.onAuthStateChanged(async (user) => {
+    setSession(user);
+    if (user) {
+      showAuthMessage("Cuenta conectada. Cargando tus datos...");
+      await loadCloudState(user);
+      elements.authScreen.classList.add("hidden");
+    }
+  });
+} else {
+  setSession(null);
+  elements.authScreen.classList.remove("hidden");
+  if (firebaseLoadError) {
+    showAuthMessage(`No se pudo cargar Firebase: ${firebaseLoadError.message}`, true);
+  }
+}

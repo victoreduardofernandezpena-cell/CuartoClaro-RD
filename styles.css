@@ -80,6 +80,61 @@ select,
   min-height: 100vh;
 }
 
+.auth-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+  background:
+    radial-gradient(circle at 24% 12%, rgba(15, 139, 111, 0.18), transparent 26rem),
+    color-mix(in srgb, var(--bg) 86%, rgba(0, 0, 0, 0.34));
+  backdrop-filter: blur(18px);
+}
+
+.auth-screen.hidden {
+  display: none;
+}
+
+.auth-card {
+  width: min(520px, 100%);
+  display: grid;
+  gap: 22px;
+  border: 1px solid var(--line);
+  border-radius: 26px;
+  background: var(--surface-strong);
+  box-shadow: var(--shadow);
+  padding: 28px;
+}
+
+.auth-card h1 {
+  font-size: clamp(2.1rem, 8vw, 3.5rem);
+}
+
+.auth-copy {
+  color: var(--muted);
+  line-height: 1.6;
+  margin-bottom: 0;
+}
+
+.auth-form {
+  gap: 12px;
+}
+
+.auth-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.text-button {
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font-weight: 900;
+}
+
 .sidebar {
   position: sticky;
   top: 0;
@@ -222,6 +277,34 @@ small,
 .header-actions {
   flex-wrap: wrap;
   justify-content: flex-end;
+}
+
+.user-chip {
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-strong);
+  padding: 6px 8px 6px 14px;
+  box-shadow: var(--shadow-soft);
+}
+
+.user-chip span {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.user-chip button {
+  min-height: 34px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--ink);
+  padding: 0 12px;
+  font-weight: 900;
 }
 
 .eyebrow {
@@ -673,12 +756,14 @@ label {
   .topbar,
   .panel-heading,
   .form-row,
-  .header-actions {
+  .header-actions,
+  .auth-actions {
     align-items: stretch;
     flex-direction: column;
   }
 
   .rate-card,
+  .user-chip,
   .summary-strip,
   .metrics-grid,
   .category-grid,
@@ -687,6 +772,11 @@ label {
   .filters-row,
   .category-form {
     grid-template-columns: 1fr;
+  }
+
+  .user-chip {
+    justify-content: space-between;
+    border-radius: 16px;
   }
 
   .rate-card {

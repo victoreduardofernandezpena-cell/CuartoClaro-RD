@@ -17,6 +17,38 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
+    <section class="auth-screen" id="authScreen" aria-labelledby="authTitle">
+      <div class="auth-card">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">CC</div>
+          <div>
+            <strong>CuartoClaro</strong>
+            <span>Gastos personales RD</span>
+          </div>
+        </div>
+        <div>
+          <p class="eyebrow">Cuenta segura</p>
+          <h1 id="authTitle">Guarda tus gastos en la nube</h1>
+          <p class="auth-copy">
+            Inicia sesion para sincronizar presupuesto, categorias, metas e historial entre dispositivos.
+          </p>
+        </div>
+        <button class="primary-button" id="googleLoginButton" type="button">Continuar con Google</button>
+        <form class="auth-form" id="emailAuthForm">
+          <input name="email" type="email" placeholder="Correo electronico" autocomplete="email" required />
+          <input name="password" type="password" placeholder="Contrasena" autocomplete="current-password" required />
+          <div class="auth-actions">
+            <button class="ghost-button" type="submit" data-auth-action="login">Iniciar sesion</button>
+            <button class="ghost-button" type="submit" data-auth-action="register">Crear cuenta</button>
+          </div>
+        </form>
+        <button class="text-button" id="localModeButton" type="button">Usar solo en este navegador</button>
+        <p class="form-message show" id="authMessage" role="status">
+          Firebase aun no esta configurado. Pega tus credenciales en firebase-config.js para activar login real.
+        </p>
+      </div>
+    </section>
+
     <div class="app-shell">
       <aside class="sidebar" aria-label="Navegacion principal">
         <div class="brand">
@@ -55,6 +87,10 @@
             <h1>Resumen mensual</h1>
           </div>
           <div class="header-actions">
+            <div class="user-chip" id="userChip">
+              <span id="userName">Modo local</span>
+              <button id="logoutButton" type="button">Salir</button>
+            </div>
             <button class="ghost-button" id="exportButton" type="button">Exportar CSV</button>
             <button class="ghost-button whatsapp" id="whatsappButton" type="button">WhatsApp</button>
             <div class="rate-card" aria-label="Conversor dolar">
@@ -238,6 +274,6 @@
       </main>
     </div>
 
-    <script src="app.js"></script>
+    <script type="module" src="app.js"></script>
   </body>
 </html>
