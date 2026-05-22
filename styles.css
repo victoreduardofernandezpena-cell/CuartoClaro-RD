@@ -601,7 +601,7 @@ label {
 .expense-item,
 .category-card {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1fr) max-content;
   gap: 12px;
   align-items: center;
 }
@@ -617,9 +617,17 @@ label {
   font-size: 0.84rem;
 }
 
+.category-card span {
+  display: block;
+  margin-top: 6px;
+  line-height: 1.45;
+}
+
 .amount {
   color: var(--accent-2);
   font-weight: 950;
+  white-space: nowrap;
+  text-align: right;
 }
 
 .progress-track {
@@ -819,5 +827,9 @@ label {
   .expense-item,
   .category-card {
     grid-template-columns: 1fr;
+  }
+
+  .amount {
+    text-align: left;
   }
 }

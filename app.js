@@ -182,7 +182,7 @@ function updateConverter() {
 function renderMetrics() {
   const spent = totalSpent();
   const available = Math.max(state.monthlyBudget - spent, 0);
-  const percent = state.monthlyBudget > 0 ? Math.round((spent / state.monthlyBudget) * 100) : 0;
+  const percent = state.monthlyBudget > 0 ? precisePercent(spent, state.monthlyBudget) : "0";
   const totalSaved = state.goals.reduce((sum, goal) => sum + goal.saved, 0);
   const weeklySpent = totalSpent(expensesThisWeek());
   const dailyAverage = spent / Math.max(new Date().getDate(), 1);
@@ -198,7 +198,7 @@ function renderMetrics() {
   elements.topCategoryMetric.textContent = topCategory ? topCategory.name : "Sin datos";
   elements.sidebarBalance.textContent = pesos.format(available);
 
-  const warning = percent >= 80;
+  const warning = Number(percent) >= 80;
   elements.alertMetric.classList.toggle("warning", warning);
   elements.alertTitle.textContent = warning ? "Cuidado" : "Todo bien";
   elements.alertCopy.textContent = warning
@@ -278,7 +278,7 @@ function renderBudgets() {
   elements.budgetBars.innerHTML = state.categories
     .map((category) => {
       const spent = categorySpent(category.name);
-      const percent = category.budget > 0 ? Math.round((spent / category.budget) * 100) : 0;
+      const percent = category.budget > 0 ? precisePercent(spent, category.budget) : "0";
       return `
         <article class="budget-item">
           <div class="panel-heading">
@@ -286,7 +286,7 @@ function renderBudgets() {
             <span>${percent}%</span>
           </div>
           <div class="progress-track" aria-label="${percent}% usado">
-            <div class="progress-fill ${percent >= 85 ? "hot" : ""}" style="--value: ${percent}%"></div>
+            <div class="progress-fill ${Number(percent) >= 85 ? "hot" : ""}" style="--value: ${percent}%"></div>
           </div>
           <small>${pesos.format(spent)} de ${pesos.format(category.budget)}</small>
         </article>
@@ -303,7 +303,7 @@ function renderGoals() {
 
   elements.goalList.innerHTML = state.goals
     .map((goal) => {
-      const percent = Math.round((goal.saved / goal.target) * 100);
+      const percent = goal.target > 0 ? precisePercent(goal.saved, goal.target) : "0";
       return `
         <article class="goal-item">
           <div class="panel-heading">
@@ -329,12 +329,12 @@ function renderCategories() {
   elements.categoryGrid.innerHTML = state.categories
     .map((category) => {
       const spent = categorySpent(category.name);
-      const percent = category.budget > 0 ? Math.round((spent / category.budget) * 100) : 0;
+      const percent = category.budget > 0 ? precisePercent(spent, category.budget) : "0";
       return `
         <article class="category-card" style="--category-color: ${category.color}">
           <div>
             <strong>${category.name}</strong>
-            <span>${percent}% usado - presupuesto ${pesos.format(category.budget)}</span>
+            <span>${percent}% usado de ${pesos.format(category.budget)}</span>
           </div>
           <div class="amount">${pesos.format(spent)}</div>
         </article>
@@ -371,7 +371,7 @@ function drawChart() {
   const data = state.categories.map((category) => ({
     ...category,
     spent: categorySpent(category.name),
-    percent: category.budget > 0 ? Math.round((categorySpent(category.name) / category.budget) * 100) : 0
+    percent: category.budget > 0 ? precisePercent(categorySpent(category.name), category.budget) : "0"
   }));
   const max = Math.max(...data.map((item) => item.spent), 1);
   const barGap = width < 620 ? 8 : 16;
@@ -464,6 +464,14 @@ function roundedRect(ctx, x, y, width, height, radius) {
 function shortMoney(value) {
   if (value >= 1000) return `RD$${Math.round(value / 1000)}k`;
   return `RD$${value}`;
+}
+
+function precisePercent(value, total) {
+  const percent = (Number(value) / Number(total)) * 100;
+  if (!Number.isFinite(percent)) return "0";
+  if (percent > 99 && percent < 100) return percent.toFixed(1);
+  if (Number.isInteger(percent)) return String(percent);
+  return percent.toFixed(1);
 }
 
 function getCss(name) {
