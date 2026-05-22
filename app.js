@@ -68,13 +68,18 @@ const elements = {
   increaseBudget: document.querySelector("#increaseBudget"),
   exportButton: document.querySelector("#exportButton"),
   whatsappButton: document.querySelector("#whatsappButton"),
+  loadingScreen: document.querySelector("#loadingScreen"),
+  loadingText: document.querySelector("#loadingText"),
   authScreen: document.querySelector("#authScreen"),
   authMessage: document.querySelector("#authMessage"),
   googleLoginButton: document.querySelector("#googleLoginButton"),
   emailAuthForm: document.querySelector("#emailAuthForm"),
   localModeButton: document.querySelector("#localModeButton"),
   userName: document.querySelector("#userName"),
+  userAvatar: document.querySelector("#userAvatar"),
   logoutButton: document.querySelector("#logoutButton"),
+  menuButton: document.querySelector("#menuButton"),
+  mobileBackdrop: document.querySelector("#mobileBackdrop"),
   chartButtons: document.querySelectorAll("[data-chart]")
 };
 
@@ -140,6 +145,7 @@ function replaceState(nextState) {
 async function loadCloudState(user) {
   if (!firebaseService) return;
   try {
+    showLoading("Cargando tus datos...", true);
     const cloudState = await firebaseService.loadUserState(user.uid);
     if (cloudState) {
       replaceState(cloudState);
@@ -148,6 +154,8 @@ async function loadCloudState(user) {
     }
   } catch (error) {
     showMessage(`No se pudieron cargar tus datos: ${error.message}`, true);
+  } finally {
+    showLoading("", false);
   }
 }
 
@@ -503,10 +511,20 @@ function showAuthMessage(text, isError = false) {
   elements.authMessage.classList.add("show");
 }
 
+function showLoading(text, visible) {
+  if (text) elements.loadingText.textContent = text;
+  elements.loadingScreen.classList.toggle("hidden", !visible);
+}
+
 function setSession(user) {
   currentUser = user;
   elements.authScreen.classList.toggle("hidden", Boolean(user) || !firebaseReady);
   elements.userName.textContent = user ? user.displayName || user.email || "Cuenta activa" : "Modo local";
+  if (user?.photoURL) {
+    elements.userAvatar.src = user.photoURL;
+  } else {
+    elements.userAvatar.removeAttribute("src");
+  }
   elements.logoutButton.hidden = !user;
 }
 
@@ -621,9 +639,12 @@ elements.googleLoginButton.addEventListener("click", async () => {
 
   try {
     showAuthMessage("Abriendo Google...");
+    showLoading("Conectando con Google...", true);
     await firebaseService.signInGoogle();
   } catch (error) {
     showAuthMessage(error.message, true);
+  } finally {
+    showLoading("", false);
   }
 });
 
@@ -642,6 +663,7 @@ elements.emailAuthForm.addEventListener("submit", async (event) => {
 
   try {
     showAuthMessage(action === "register" ? "Creando cuenta..." : "Iniciando sesion...");
+    showLoading(action === "register" ? "Creando cuenta..." : "Iniciando sesion...", true);
     if (action === "register") {
       await firebaseService.registerEmail(email, password);
     } else {
@@ -649,6 +671,8 @@ elements.emailAuthForm.addEventListener("submit", async (event) => {
     }
   } catch (error) {
     showAuthMessage(error.message, true);
+  } finally {
+    showLoading("", false);
   }
 });
 
@@ -658,7 +682,24 @@ elements.logoutButton.addEventListener("click", async () => {
     return;
   }
 
-  await firebaseService.signOut();
+  try {
+    showLoading("Cerrando sesion...", true);
+    await firebaseService.signOut();
+  } finally {
+    showLoading("", false);
+  }
+});
+
+elements.menuButton.addEventListener("click", () => {
+  document.body.classList.add("sidebar-open");
+});
+
+elements.mobileBackdrop.addEventListener("click", () => {
+  document.body.classList.remove("sidebar-open");
+});
+
+document.querySelectorAll(".nav-list a").forEach((link) => {
+  link.addEventListener("click", () => document.body.classList.remove("sidebar-open"));
 });
 
 elements.themeToggle.addEventListener("click", () => {

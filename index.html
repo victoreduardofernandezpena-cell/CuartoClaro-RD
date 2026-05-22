@@ -12,11 +12,22 @@
     <meta property="og:image" content="og-image.svg" />
     <meta name="theme-color" content="#0f8b6f" />
     <title>CuartoClaro RD</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800;900&display=swap" rel="stylesheet" />
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
+    <div class="loading-screen hidden" id="loadingScreen" role="status" aria-live="polite">
+      <div class="loader-card">
+        <div class="spinner" aria-hidden="true"></div>
+        <strong id="loadingText">Conectando...</strong>
+        <span>Preparando tus datos</span>
+      </div>
+    </div>
+
     <section class="auth-screen" id="authScreen" aria-labelledby="authTitle">
       <div class="auth-card">
         <div class="brand">
@@ -50,7 +61,8 @@
     </section>
 
     <div class="app-shell">
-      <aside class="sidebar" aria-label="Navegacion principal">
+      <div class="mobile-backdrop" id="mobileBackdrop"></div>
+      <aside class="sidebar" id="sidebar" aria-label="Navegacion principal">
         <div class="brand">
           <div class="brand-mark" aria-hidden="true">CC</div>
           <div>
@@ -82,12 +94,16 @@
 
       <main class="main-content">
         <header class="topbar" id="dashboard">
-          <div>
-            <p class="eyebrow">Mayo 2026</p>
-            <h1>Resumen mensual</h1>
+          <div class="title-row">
+            <button class="menu-button" id="menuButton" type="button" aria-label="Abrir menu">Menu</button>
+            <div>
+              <p class="eyebrow">Mayo 2026</p>
+              <h1>Resumen mensual</h1>
+            </div>
           </div>
           <div class="header-actions">
             <div class="user-chip" id="userChip">
+              <img id="userAvatar" alt="" />
               <span id="userName">Modo local</span>
               <button id="logoutButton" type="button">Salir</button>
             </div>
