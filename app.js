@@ -4,35 +4,15 @@ const pesos = new Intl.NumberFormat("es-DO", {
   minimumFractionDigits: 2
 });
 
+const storageKey = "cuartoclaro-state-v2";
 const palette = ["#0f8b6f", "#2457a6", "#d95f43", "#7a5cba", "#b95034", "#c28d2c", "#128c7e", "#8a6f2a"];
 
 const initialState = {
-  monthlyBudget: 85000,
+  monthlyBudget: 0,
   usdRate: 59,
-  categories: [
-    { name: "Comida", budget: 22000, color: "#0f8b6f" },
-    { name: "Transporte", budget: 13500, color: "#2457a6" },
-    { name: "Hogar", budget: 18000, color: "#d95f43" },
-    { name: "Servicios", budget: 10500, color: "#7a5cba" },
-    { name: "Salud", budget: 8000, color: "#b95034" },
-    { name: "Ocio", budget: 13000, color: "#c28d2c" }
-  ],
-  goals: [
-    { name: "Fondo de emergencia", target: 120000, saved: 56500 },
-    { name: "Inicial vehiculo", target: 250000, saved: 83000 },
-    { name: "Viaje familiar", target: 95000, saved: 41000 },
-    { name: "Educacion", target: 75000, saved: 21500 },
-    { name: "Inversion inicial", target: 180000, saved: 49500 }
-  ],
-  expenses: [
-    { description: "Supermercado Nacional", category: "Comida", amount: 6250, date: "2026-05-21" },
-    { description: "Combustible", category: "Transporte", amount: 3200, date: "2026-05-20" },
-    { description: "Luz y agua", category: "Servicios", amount: 4875, date: "2026-05-18" },
-    { description: "Farmacia", category: "Salud", amount: 1420, date: "2026-05-17" },
-    { description: "Almuerzo oficina", category: "Comida", amount: 850, date: "2026-05-16" },
-    { description: "Internet hogar", category: "Hogar", amount: 2850, date: "2026-05-15" },
-    { description: "Cine", category: "Ocio", amount: 2100, date: "2026-05-12" }
-  ],
+  categories: [],
+  goals: [],
+  expenses: [],
   chartMode: "category",
   dark: false
 };
@@ -78,29 +58,23 @@ const elements = {
 
 function mergeState(saved) {
   const merged = { ...initialState, ...saved };
-  merged.categories = mergeByName(initialState.categories, saved.categories || []);
-  merged.goals = mergeByName(initialState.goals, saved.goals || []);
+  merged.categories = saved.categories || initialState.categories;
+  merged.goals = saved.goals || initialState.goals;
   merged.expenses = saved.expenses || initialState.expenses;
   return merged;
 }
 
 function readSavedState() {
   try {
-    return JSON.parse(localStorage.getItem("cuartoclaro-state") || "null");
+    return JSON.parse(localStorage.getItem(storageKey) || "null");
   } catch (error) {
-    localStorage.removeItem("cuartoclaro-state");
+    localStorage.removeItem(storageKey);
     return null;
   }
 }
 
-function mergeByName(defaultItems, savedItems) {
-  const map = new Map(defaultItems.map((item) => [item.name.toLowerCase(), item]));
-  savedItems.forEach((item) => map.set(item.name.toLowerCase(), item));
-  return Array.from(map.values());
-}
-
 function persist() {
-  localStorage.setItem("cuartoclaro-state", JSON.stringify(state));
+  localStorage.setItem(storageKey, JSON.stringify(state));
 }
 
 function totalSpent(expenses = state.expenses) {
@@ -134,7 +108,7 @@ function updateConverter() {
 function renderMetrics() {
   const spent = totalSpent();
   const available = Math.max(state.monthlyBudget - spent, 0);
-  const percent = Math.round((spent / state.monthlyBudget) * 100);
+  const percent = state.monthlyBudget > 0 ? Math.round((spent / state.monthlyBudget) * 100) : 0;
   const totalSaved = state.goals.reduce((sum, goal) => sum + goal.saved, 0);
   const weeklySpent = totalSpent(expensesThisWeek());
   const dailyAverage = spent / Math.max(new Date().getDate(), 1);
@@ -165,7 +139,7 @@ function renderSelectors() {
     .map((category) => `<option value="${category.name}">${category.name}</option>`)
     .join("");
 
-  elements.expenseCategory.innerHTML = options;
+  elements.expenseCategory.innerHTML = options || `<option value="">Agrega una categoria</option>`;
   elements.categoryFilter.innerHTML = `<option value="Todas">Todas</option>${options}`;
   elements.expenseCategory.value = currentExpenseCategory || state.categories[0]?.name || "";
   elements.categoryFilter.value = currentFilter;
@@ -222,10 +196,15 @@ function renderExpenses() {
 }
 
 function renderBudgets() {
+  if (!state.categories.length) {
+    elements.budgetBars.innerHTML = `<div class="empty-state">Agrega una categoria para crear tu primer presupuesto.</div>`;
+    return;
+  }
+
   elements.budgetBars.innerHTML = state.categories
     .map((category) => {
       const spent = categorySpent(category.name);
-      const percent = Math.round((spent / category.budget) * 100);
+      const percent = category.budget > 0 ? Math.round((spent / category.budget) * 100) : 0;
       return `
         <article class="budget-item">
           <div class="panel-heading">
@@ -243,6 +222,11 @@ function renderBudgets() {
 }
 
 function renderGoals() {
+  if (!state.goals.length) {
+    elements.goalList.innerHTML = `<div class="empty-state">Tus metas de ahorro apareceran aqui cuando las agregues.</div>`;
+    return;
+  }
+
   elements.goalList.innerHTML = state.goals
     .map((goal) => {
       const percent = Math.round((goal.saved / goal.target) * 100);
@@ -263,10 +247,15 @@ function renderGoals() {
 }
 
 function renderCategories() {
+  if (!state.categories.length) {
+    elements.categoryGrid.innerHTML = `<div class="empty-state">No hay categorias todavia. Crea una para empezar.</div>`;
+    return;
+  }
+
   elements.categoryGrid.innerHTML = state.categories
     .map((category) => {
       const spent = categorySpent(category.name);
-      const percent = Math.round((spent / category.budget) * 100);
+      const percent = category.budget > 0 ? Math.round((spent / category.budget) * 100) : 0;
       return `
         <article class="category-card" style="--category-color: ${category.color}">
           <div>
@@ -300,10 +289,15 @@ function drawChart() {
     return;
   }
 
+  if (!state.categories.length || !state.expenses.length) {
+    drawEmptyChart(ctx, width, height);
+    return;
+  }
+
   const data = state.categories.map((category) => ({
     ...category,
     spent: categorySpent(category.name),
-    percent: Math.round((categorySpent(category.name) / category.budget) * 100)
+    percent: category.budget > 0 ? Math.round((categorySpent(category.name) / category.budget) * 100) : 0
   }));
   const max = Math.max(...data.map((item) => item.spent), 1);
   const barGap = width < 620 ? 8 : 16;
@@ -325,6 +319,11 @@ function drawChart() {
 }
 
 function drawTrend(ctx, width, height) {
+  if (!state.expenses.length) {
+    drawEmptyChart(ctx, width, height);
+    return;
+  }
+
   const byDate = state.expenses.reduce((map, expense) => {
     map[expense.date] = (map[expense.date] || 0) + expense.amount;
     return map;
@@ -369,6 +368,13 @@ function drawTrend(ctx, width, height) {
     ctx.fillStyle = getCss("--muted");
     ctx.fillText(shortMoney(point.amount), x - 14, y - 12);
   });
+}
+
+function drawEmptyChart(ctx, width, height) {
+  ctx.fillStyle = getCss("--muted");
+  ctx.textAlign = "center";
+  ctx.fillText("Agrega tus primeros gastos para ver el grafico.", width / 2, height / 2);
+  ctx.textAlign = "left";
 }
 
 function roundedRect(ctx, x, y, width, height, radius) {
@@ -462,8 +468,8 @@ elements.expenseForm.addEventListener("submit", (event) => {
   const description = data.get("description").trim();
   const amount = Number(data.get("amount"));
 
-  if (!description || amount <= 0) {
-    showMessage("Revisa la descripcion y el monto.", true);
+  if (!description || amount <= 0 || !data.get("category")) {
+    showMessage("Agrega una categoria y revisa el monto.", true);
     return;
   }
 

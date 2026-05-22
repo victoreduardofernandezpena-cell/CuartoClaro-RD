@@ -10,10 +10,10 @@
   <rect x="145" y="300" width="260" height="135" rx="24" fill="#eef3ef"/>
   <rect x="470" y="300" width="260" height="135" rx="24" fill="#eef3ef"/>
   <rect x="795" y="300" width="260" height="135" rx="24" fill="#eef3ef"/>
-  <text x="175" y="355" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#65736d">Gastado</text>
-  <text x="175" y="402" font-family="Arial, sans-serif" font-size="34" font-weight="800" fill="#d95f43">RD$21,545</text>
-  <text x="500" y="355" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#65736d">Disponible</text>
-  <text x="500" y="402" font-family="Arial, sans-serif" font-size="34" font-weight="800" fill="#0f8b6f">RD$63,455</text>
+  <text x="175" y="355" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#65736d">Gastos</text>
+  <text x="175" y="402" font-family="Arial, sans-serif" font-size="34" font-weight="800" fill="#d95f43">Control simple</text>
+  <text x="500" y="355" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#65736d">Presupuesto</text>
+  <text x="500" y="402" font-family="Arial, sans-serif" font-size="34" font-weight="800" fill="#0f8b6f">A tu ritmo</text>
   <text x="825" y="355" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#65736d">Ahorro</text>
-  <text x="825" y="402" font-family="Arial, sans-serif" font-size="34" font-weight="800" fill="#2457a6">RD$251,500</text>
+  <text x="825" y="402" font-family="Arial, sans-serif" font-size="34" font-weight="800" fill="#2457a6">Metas claras</text>
 </svg>
